@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.Input;
+using Lab02.Exceptions;
 
 namespace Lab02.ViewModel
 {
@@ -111,17 +112,13 @@ namespace Lab02.ViewModel
         private async void ProceedAsync()
         {
             try
-            {
-                if (!IsAgeValid())
-                {
-                    MessageBox.Show("Age must be between 0 and 135 years old.");
-                    return;
-                }
-
+            { 
                 if (IsTodayBirthday())
                 {
                     MessageBox.Show("Happy Birthday!");
                 }
+
+                ValidateInput();
 
                 await Task.Delay(2000);
 
@@ -149,14 +146,47 @@ namespace Lab02.ViewModel
             }
         }
 
-        private bool IsAgeValid()
+        private void ValidateInput()
         {
-            var age = GetAge();
-            if (age < 0 || age > 135)
-            {
-                return false;
-            }
-            return true;
+            if (BirthDate > DateTime.Now)
+                throw new FutureBirthDateException();
+
+            if (GetAge() > 135)
+                throw new TooOldBirthDateException();
+
+            if (!IsValidEmail(Email))
+                throw new InvalidEmailException();
+
+            if (!IsValidName(Name))
+                throw new InvalidNameException("Name");
+
+            if (!IsValidName(Surname))
+                throw new InvalidNameException("Surname");
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return false;
+
+            int atIndex = email.IndexOf('@');
+            int dotIndex = email.IndexOf('.', atIndex + 1);
+
+            return
+                atIndex > 0 && 
+                dotIndex > atIndex + 1 && 
+                dotIndex < email.Length - 1; 
+        }
+
+
+        private bool IsValidName(string value)
+        {
+            return
+                !string.IsNullOrWhiteSpace(value) &&
+                value.Length > 1 &&
+                value.Length < 30 &&
+                char.IsUpper(value[0]) &&
+                value.Skip(1).All(char.IsLower) &&
+                value.All(char.IsLetter);
         }
 
         private int GetAge()
